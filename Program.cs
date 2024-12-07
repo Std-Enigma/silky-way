@@ -1,11 +1,15 @@
-﻿using Silk.NET.Input;
+﻿using System.Drawing;
+using Silk.NET.Input;
 using Silk.NET.Maths;
+using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
 
 namespace Tutorial
 {
     class Program
     {
+        private static GL? _gl;
+
         private static IWindow? _window;
 
         private static void Main(string[] args)
@@ -40,11 +44,17 @@ namespace Tutorial
             //Set-up input context.
             var input = _window?.CreateInput();
             for (int i = 0; i < input?.Keyboards.Count; i++) input.Keyboards[i].KeyDown += KeyDown;
+
+            _gl = _window?.CreateOpenGL();
+            _gl?.ClearColor(Color.Black);
         }
 
-        private static void OnRender(double delta) { }
-
         private static void OnUpdate(double delta) { }
+
+        private static void OnRender(double delta)
+        {
+            _gl?.Clear(ClearBufferMask.ColorBufferBit);
+        }
 
         private static void OnFramebufferResize(Vector2D<int> newSize) { }
 
