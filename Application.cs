@@ -49,7 +49,11 @@ namespace Tutorial
             _gl?.Clear(ClearBufferMask.ColorBufferBit);
         }
 
-        private void OnFramebufferResize(Vector2D<int> newSize) { }
+        private void OnFramebufferResize(Vector2D<int> newSize)
+        {
+            // Resize viewport the correct size
+            _gl?.Viewport(newSize);
+        }
 
         private void OnKeyDown(IKeyboard keyboard, Key key, int keyCode)
         {
