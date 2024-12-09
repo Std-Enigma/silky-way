@@ -10,6 +10,10 @@ namespace Tutorial
     {
         private static Application? _instance;
 
+        private uint _vao;
+        private uint _vbo;
+        private uint _program;
+
         private GL? _gl;
 
         private IWindow _window;
@@ -32,7 +36,7 @@ namespace Tutorial
             _window.FramebufferResize += OnFramebufferResize;
         }
 
-        private void OnLoad()
+        private unsafe void OnLoad()
         {
             //Set-up input context.
             var input = _window.CreateInput();
@@ -40,6 +44,60 @@ namespace Tutorial
 
             _gl = _window.CreateOpenGL();
             _gl.ClearColor(Color.Black);
+
+            // create vertex array
+            _vao = _gl.GenVertexArray();
+            _gl.BindVertexArray(_vao);
+
+            // create vertex buffer
+            var vertices = new float[]
+            {
+                -0.5f, -0.5f, 0.0f,
+                 0.0f,  0.5f, 0.0f,
+                 0.5f, -0.5f, 0.0f,
+            };
+            _vbo = _gl.GenBuffer();
+            _gl.BindBuffer(BufferTargetARB.ArrayBuffer, _vbo);
+            fixed (float* buf = vertices) _gl.BufferData(BufferTargetARB.ArrayBuffer, (nuint)(vertices.Length * sizeof(float)), buf, BufferUsageARB.StaticDraw);
+
+            // create vertex shader
+            var vertCode = File.ReadAllText("./vert.glsl");
+            var vertShader = _gl.CreateShader(ShaderType.VertexShader);
+            _gl.ShaderSource(vertShader, vertCode);
+            _gl.CompileShader(vertShader);
+            _gl.GetShader(vertShader, ShaderParameterName.CompileStatus, out int vStatus);
+            if (vStatus != (int)GLEnum.True) throw new Exception($"Vertex shader failed to compile: {_gl.GetShaderInfoLog(vertShader)}");
+
+            // create fragment shader
+            var fragCode = File.ReadAllText("./frag.glsl");
+            var fragShader = _gl.CreateShader(ShaderType.FragmentShader);
+            _gl.ShaderSource(fragShader, fragCode);
+            _gl.CompileShader(fragShader);
+            _gl.GetShader(fragShader, ShaderParameterName.CompileStatus, out int fStatus);
+            if (vStatus != (int)GLEnum.True) throw new Exception($"Fragment shader failed to compile: {_gl.GetShaderInfoLog(fragShader)}");
+
+            // create shader program
+            _program = _gl.CreateProgram();
+            _gl.AttachShader(_program, vertShader);
+            _gl.AttachShader(_program, fragShader);
+            _gl.LinkProgram(_program);
+            _gl.GetProgram(_program, ProgramPropertyARB.LinkStatus, out int lStatus);
+            if (lStatus != (int)GLEnum.True) throw new Exception($"Shader program failed to link: {_gl.GetProgramInfoLog(_program)}");
+
+            // delete shader resources
+            _gl.DetachShader(_program, vertShader);
+            _gl.DetachShader(_program, fragShader);
+            _gl.DeleteShader(vertShader);
+            _gl.DeleteShader(fragShader);
+
+            // set vertex attribute pointers
+            const uint posLoc = 0;
+            _gl.EnableVertexAttribArray(posLoc);
+            _gl.VertexAttribPointer(posLoc, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), (void*)0);
+
+            // unbind resources
+            _gl.BindVertexArray(0);
+            _gl.BindBuffer(BufferTargetARB.ArrayBuffer, 0);
         }
 
         private void OnUpdate(double delta) { }
@@ -47,6 +105,11 @@ namespace Tutorial
         private void OnRender(double delta)
         {
             _gl?.Clear(ClearBufferMask.ColorBufferBit);
+
+            // render the triangle
+            _gl?.BindVertexArray(_vao);
+            _gl?.UseProgram(_program);
+            _gl?.DrawArrays(PrimitiveType.Triangles, 0, 3);
         }
 
         private void OnFramebufferResize(Vector2D<int> newSize)
