@@ -11,7 +11,6 @@ namespace Tutorial
         private static Application? _instance;
 
         private uint _vao;
-        private uint _vbo;
         private uint _program;
 
         private GL? _gl;
@@ -56,7 +55,7 @@ namespace Tutorial
                  0.0f,  0.5f, 0.0f,
                  0.5f, -0.5f, 0.0f,
             };
-            _vbo = _gl.GenBuffer();
+            var _vbo = _gl.GenBuffer();
             _gl.BindBuffer(BufferTargetARB.ArrayBuffer, _vbo);
             fixed (float* buf = vertices) _gl.BufferData(BufferTargetARB.ArrayBuffer, (nuint)(vertices.Length * sizeof(float)), buf, BufferUsageARB.StaticDraw);
 
