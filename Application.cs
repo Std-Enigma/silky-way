@@ -55,8 +55,8 @@ namespace Tutorial
                  0.0f,  0.5f, 0.0f,
                  0.5f, -0.5f, 0.0f,
             };
-            var _vbo = _gl.GenBuffer();
-            _gl.BindBuffer(BufferTargetARB.ArrayBuffer, _vbo);
+            var vbo = _gl.GenBuffer();
+            _gl.BindBuffer(BufferTargetARB.ArrayBuffer, vbo);
             fixed (float* buf = vertices) _gl.BufferData(BufferTargetARB.ArrayBuffer, (nuint)(vertices.Length * sizeof(float)), buf, BufferUsageARB.StaticDraw);
 
             //Create vertex shader
