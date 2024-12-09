@@ -11,8 +11,6 @@ namespace Tutorial
         private static Application? _instance;
 
         private uint _vao;
-        private uint _vbo;
-        private uint _ebo;
         private uint _program;
 
         private GL? _gl;
@@ -58,8 +56,8 @@ namespace Tutorial
                 -0.5f, -0.5f, 0.0f,
                  0.5f, -0.5f, 0.0f,
             };
-            _vbo = _gl.GenBuffer();
-            _gl.BindBuffer(BufferTargetARB.ArrayBuffer, _vbo);
+            var vbo = _gl.GenBuffer();
+            _gl.BindBuffer(BufferTargetARB.ArrayBuffer, vbo);
             fixed (float* buf = vertices) _gl.BufferData(BufferTargetARB.ArrayBuffer, (nuint)(vertices.Length * sizeof(float)), buf, BufferUsageARB.StaticDraw);
 
             //Create index buffer
@@ -68,8 +66,8 @@ namespace Tutorial
                 0u, 1u, 2u,
                 2u, 1u, 3u,
             };
-            _ebo = _gl.GenBuffer();
-            _gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, _ebo);
+            var ebo = _gl.GenBuffer();
+            _gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, ebo);
             fixed (uint* buf = indices) _gl.BufferData(BufferTargetARB.ElementArrayBuffer, (nuint)(indices.Length * sizeof(uint)), buf, BufferUsageARB.StaticDraw);
 
             //Create vertex shader
