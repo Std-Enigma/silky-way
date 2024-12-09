@@ -12,6 +12,7 @@ namespace Tutorial
 
         private uint _vao;
         private uint _vbo;
+        private uint _ebo;
         private uint _program;
 
         private GL? _gl;
@@ -52,13 +53,24 @@ namespace Tutorial
             //Create vertex buffer
             var vertices = new float[]
             {
+                -0.5f,  0.5f, 0.0f,
+                 0.5f,  0.5f, 0.0f,
                 -0.5f, -0.5f, 0.0f,
-                 0.0f,  0.5f, 0.0f,
                  0.5f, -0.5f, 0.0f,
             };
             _vbo = _gl.GenBuffer();
             _gl.BindBuffer(BufferTargetARB.ArrayBuffer, _vbo);
             fixed (float* buf = vertices) _gl.BufferData(BufferTargetARB.ArrayBuffer, (nuint)(vertices.Length * sizeof(float)), buf, BufferUsageARB.StaticDraw);
+
+            //Create index buffer
+            var indices = new uint[]
+            {
+                0u, 1u, 2u,
+                2u, 1u, 3u,
+            };
+            _ebo = _gl.GenBuffer();
+            _gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, _ebo);
+            fixed (uint* buf = indices) _gl.BufferData(BufferTargetARB.ElementArrayBuffer, (nuint)(indices.Length * sizeof(uint)), buf, BufferUsageARB.StaticDraw);
 
             //Create vertex shader
             var vertCode = File.ReadAllText("./vert.glsl");
@@ -98,18 +110,19 @@ namespace Tutorial
             //Unbind resources
             _gl.BindVertexArray(0);
             _gl.BindBuffer(BufferTargetARB.ArrayBuffer, 0);
+            _gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, 0);
         }
 
         private void OnUpdate(double delta) { }
 
-        private void OnRender(double delta)
+        private unsafe void OnRender(double delta)
         {
             _gl?.Clear(ClearBufferMask.ColorBufferBit);
 
             //Render the triangle
             _gl?.BindVertexArray(_vao);
             _gl?.UseProgram(_program);
-            _gl?.DrawArrays(PrimitiveType.Triangles, 0, 3);
+            _gl?.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, (void*)0);
         }
 
         private void OnFramebufferResize(Vector2D<int> newSize)
