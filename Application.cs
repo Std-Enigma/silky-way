@@ -51,10 +51,11 @@ namespace Tutorial
             //Create vertex buffer
             var vertices = new float[]
             {
-                -0.5f,  0.5f, 0.0f,
-                 0.5f,  0.5f, 0.0f,
-                -0.5f, -0.5f, 0.0f,
-                 0.5f, -0.5f, 0.0f,
+                // positions        // colors
+                -0.5f,  0.5f, 0.0f, 0.6f,  0.4f,  0.8f,
+                 0.5f,  0.5f, 0.0f, 0.85f, 0.44f, 0.84f,
+                -0.5f, -0.5f, 0.0f, 0.7f,  0.7f,  0.9f,
+                 0.5f, -0.5f, 0.0f, 0.88f, 0.69f, 0.87f,
             };
             var vbo = _gl.GenBuffer();
             _gl.BindBuffer(BufferTargetARB.ArrayBuffer, vbo);
@@ -103,7 +104,11 @@ namespace Tutorial
             //Set vertex attribute pointers
             const uint posLoc = 0;
             _gl.EnableVertexAttribArray(posLoc);
-            _gl.VertexAttribPointer(posLoc, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), (void*)0);
+            _gl.VertexAttribPointer(posLoc, 3, VertexAttribPointerType.Float, false, 6 * sizeof(float), (void*)0);
+
+            const uint colorLoc = 1;
+            _gl.EnableVertexAttribArray(colorLoc);
+            _gl.VertexAttribPointer(colorLoc, 3, VertexAttribPointerType.Float, false, 6 * sizeof(float), (void*)(3 * sizeof(float)));
 
             //Unbind resources
             _gl.BindVertexArray(0);
