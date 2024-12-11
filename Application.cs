@@ -11,6 +11,7 @@ namespace Tutorial
         private static Application? _instance;
 
         private uint _vao;
+        private float _time;
         private uint _program;
 
         private GL? _gl;
@@ -117,9 +118,17 @@ namespace Tutorial
         {
             _gl?.Clear(ClearBufferMask.ColorBufferBit);
 
+            // Calculate fragment color
+            _time += (float)delta;
+            var redVal = MathF.Cos(_time) / 2.0f + 0.5f;
+            var blueVal = MathF.Sin(_time) / 2.0f + 0.5f;
+            var color = new System.Numerics.Vector3(redVal, 1.0f, blueVal);
+            var uniformLoc = _gl?.GetUniformLocation(_program, "inputColor") ?? 0;
+
             //Render the triangle
             _gl?.BindVertexArray(_vao);
             _gl?.UseProgram(_program);
+            _gl?.Uniform3(uniformLoc, ref color);
             _gl?.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, (void*)0);
         }
 
