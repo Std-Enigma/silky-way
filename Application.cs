@@ -1,4 +1,5 @@
 using System.Drawing;
+using Silk.NET.Core.Loader;
 using Silk.NET.Input;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
@@ -10,8 +11,9 @@ namespace Tutorial
     {
         private static Application? _instance;
 
-        private uint _vao;
-        private uint _program;
+        private Texture? _texture;
+        private VertexArray? _vertexArray;
+        private Shader? _shader;
 
         private GL? _gl;
 
@@ -42,24 +44,23 @@ namespace Tutorial
             for (int i = 0; i < input?.Keyboards.Count; i++) input.Keyboards[i].KeyDown += OnKeyDown;
 
             _gl = _window.CreateOpenGL();
-            _gl.ClearColor(Color.Black);
+            _gl.ClearColor(Color.White);
+            _gl.Enable(EnableCap.Blend);
+            _gl.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
             //Create vertex array
-            _vao = _gl.GenVertexArray();
-            _gl.BindVertexArray(_vao);
+            _vertexArray = new VertexArray(_gl);
 
             //Create vertex buffer
             var vertices = new float[]
             {
-                // positions        // colors
-                -0.5f,  0.5f, 0.0f, 0.6f,  0.4f,  0.8f,
-                 0.5f,  0.5f, 0.0f, 0.85f, 0.44f, 0.84f,
-                -0.5f, -0.5f, 0.0f, 0.7f,  0.7f,  0.9f,
-                 0.5f, -0.5f, 0.0f, 0.88f, 0.69f, 0.87f,
+                // positions        // colors          // Tex Coord
+                -0.5f,  0.5f, 0.0f, 0.6f,  0.4f,  0.8f,  0.0f, 1.0f,
+                 0.5f,  0.5f, 0.0f, 0.85f, 0.44f, 0.84f, 1.0f, 1.0f,
+                -0.5f, -0.5f, 0.0f, 0.7f,  0.7f,  0.9f,  0.0f, 0.0f,
+                 0.5f, -0.5f, 0.0f, 0.88f, 0.69f, 0.87f, 1.0f, 0.0f,
             };
-            var vbo = _gl.GenBuffer();
-            _gl.BindBuffer(BufferTargetARB.ArrayBuffer, vbo);
-            fixed (float* buf = vertices) _gl.BufferData(BufferTargetARB.ArrayBuffer, (nuint)(vertices.Length * sizeof(float)), buf, BufferUsageARB.StaticDraw);
+            var vertexBuffer = new BufferObject<float>(_gl, BufferTargetARB.ArrayBuffer, vertices);
 
             //Create index buffer
             var indices = new uint[]
@@ -67,53 +68,22 @@ namespace Tutorial
                 0u, 1u, 2u,
                 2u, 1u, 3u,
             };
-            var ebo = _gl.GenBuffer();
-            _gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, ebo);
-            fixed (uint* buf = indices) _gl.BufferData(BufferTargetARB.ElementArrayBuffer, (nuint)(indices.Length * sizeof(uint)), buf, BufferUsageARB.StaticDraw);
+            var elementBuffer = new BufferObject<uint>(_gl, BufferTargetARB.ElementArrayBuffer, indices);
 
-            //Create vertex shader
-            var vertCode = File.ReadAllText("./vert.glsl");
-            var vertShader = _gl.CreateShader(ShaderType.VertexShader);
-            _gl.ShaderSource(vertShader, vertCode);
-            _gl.CompileShader(vertShader);
-            _gl.GetShader(vertShader, ShaderParameterName.CompileStatus, out int vStatus);
-            if (vStatus != (int)GLEnum.True) throw new Exception($"Vertex shader failed to compile: {_gl.GetShaderInfoLog(vertShader)}");
+            _shader = Shader.LoadFromFile(_gl, "./vert.glsl", "./frag.glsl");
+            _shader.SetUniform("uTexture");
 
-            //Create fragment shader
-            var fragCode = File.ReadAllText("./frag.glsl");
-            var fragShader = _gl.CreateShader(ShaderType.FragmentShader);
-            _gl.ShaderSource(fragShader, fragCode);
-            _gl.CompileShader(fragShader);
-            _gl.GetShader(fragShader, ShaderParameterName.CompileStatus, out int fStatus);
-            if (vStatus != (int)GLEnum.True) throw new Exception($"Fragment shader failed to compile: {_gl.GetShaderInfoLog(fragShader)}");
-
-            //Create shader program
-            _program = _gl.CreateProgram();
-            _gl.AttachShader(_program, vertShader);
-            _gl.AttachShader(_program, fragShader);
-            _gl.LinkProgram(_program);
-            _gl.GetProgram(_program, ProgramPropertyARB.LinkStatus, out int lStatus);
-            if (lStatus != (int)GLEnum.True) throw new Exception($"Shader program failed to link: {_gl.GetProgramInfoLog(_program)}");
-
-            //Delete shader resources
-            _gl.DetachShader(_program, vertShader);
-            _gl.DetachShader(_program, fragShader);
-            _gl.DeleteShader(vertShader);
-            _gl.DeleteShader(fragShader);
+            _texture = new Texture(_gl, "silk.png");
 
             //Set vertex attribute pointers
             const uint posLoc = 0;
-            _gl.EnableVertexAttribArray(posLoc);
-            _gl.VertexAttribPointer(posLoc, 3, VertexAttribPointerType.Float, false, 6 * sizeof(float), (void*)0);
+            _vertexArray.VertexAttributePointer<float>(posLoc, 3, VertexAttribPointerType.Float, 8, 0);
 
             const uint colorLoc = 1;
-            _gl.EnableVertexAttribArray(colorLoc);
-            _gl.VertexAttribPointer(colorLoc, 3, VertexAttribPointerType.Float, false, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+            _vertexArray.VertexAttributePointer<float>(colorLoc, 3, VertexAttribPointerType.Float, 8, 3);
 
-            //Unbind resources
-            _gl.BindVertexArray(0);
-            _gl.BindBuffer(BufferTargetARB.ArrayBuffer, 0);
-            _gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, 0);
+            const uint texCoordLoc = 2;
+            _vertexArray.VertexAttributePointer<float>(texCoordLoc, 2, VertexAttribPointerType.Float, 8, 6);
         }
 
         private void OnUpdate(double delta) { }
@@ -123,8 +93,9 @@ namespace Tutorial
             _gl?.Clear(ClearBufferMask.ColorBufferBit);
 
             //Render the triangle
-            _gl?.BindVertexArray(_vao);
-            _gl?.UseProgram(_program);
+            _vertexArray?.Bind();
+            _shader?.Use();
+            _texture?.Bind();
             _gl?.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, (void*)0);
         }
 
